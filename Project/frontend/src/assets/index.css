@@ -1,0 +1,18 @@
+/* index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply font-sans;
+}
+
+:root {
+  --brand-orange: #FF8A5B;
+  --splash-gradient-start: #F6E1C3;
+  --splash-gradient-end: #ffffff;
+}
+
+.bg-splash-gradient {
+  background: linear-gradient(to bottom, var(--splash-gradient-end), var(--splash-gradient-start));
+}

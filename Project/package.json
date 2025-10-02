@@ -1,0 +1,41 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:server": "babel backend/server.js -d backend/dist",
+    "build:client": "webpack",
+    "build": "npm run build:server && npm run build:client",
+    "start": "npm run build && node backend/dist/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.28.3",
+    "@babel/core": "^7.28.3",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/preset-react": "^7.27.1",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@tailwindcss/postcss7-compat": "^2.2.17",
+    "autoprefixer": "^10.4.21",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.6.4",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.2.0",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^2.2.19",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "path": "^0.12.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2"
+  }
+}
