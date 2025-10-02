@@ -1,10 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../../utils/api";
 
 export default function TopRepositories({ className = "" }) {
-  const repos = [
-    { name: "Repo1/project1", desc: "Repository description" },
-    { name: "Repo2/project2", desc: "Repository description" },
-  ];
+  const [repos, setRepos] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await api.get("/api/projects?limit=5");
+        if (!alive) return;
+        setRepos(data.map((p) => ({ name: p.name, desc: p.description || "Repository description" })));
+      } catch {
+        setRepos([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <section className={`rounded-md border bg-white shadow p-4 ${className}`}>
       <h2 className="text-base font-semibold text-black mb-2">Top Repositories</h2>

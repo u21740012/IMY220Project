@@ -1,4 +1,3 @@
-// src/pages/HomePage.jsx
 import React from "react";
 import AppHeader from "../components/AppHeader";
 import SearchInput from "../components/home/SearchInput";
@@ -19,20 +18,28 @@ export default function HomePage() {
               Home
             </h1>
 
-            <div className="mt-4 h-[132px] flex flex-col justify-between">
-              <SearchInput className="w-[240px] h-8 text-xs px-2 py-1" />
-              <div className="flex gap-2 pt-2">
-                <button className="w-32 h-8 bg-brand-orange text-white text-xs font-semibold rounded-md">
+            <div className="mt-4 flex flex-col">
+              <SearchInput className="w-64 h-9" />
+
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md text-sm font-semibold bg-brand-orange text-white shadow-sm hover:brightness-95"
+                >
                   New Repository
                 </button>
-                <button className="w-28 h-8 bg-white border border-gray-300 text-black text-xs font-semibold rounded-md">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-md text-sm font-semibold bg-white text-gray-900 border border-gray-300 shadow-sm hover:bg-gray-50"
+                >
                   Invite Team
                 </button>
               </div>
             </div>
           </div>
+
           <div className="col-span-12 md:col-span-8">
-            <Feed className="h-[132px] p-4" />
+            <Feed className="p-4" />
           </div>
         </div>
 

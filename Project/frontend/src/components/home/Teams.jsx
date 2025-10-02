@@ -1,7 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../../utils/api";
 
 export default function Teams({ className = "" }) {
-  const teams = ["Team1/Repo1", "Team2/Repo2", "Team3/Repo3"];
+  const [teams, setTeams] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const users = await api.get("/api/users?limit=6");
+        if (!alive) return;
+        setTeams(users.map((u) => u.username || u.email));
+      } catch {
+        setTeams([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <section className={`rounded-md border bg-white shadow p-4 ${className}`}>
       <h2 className="text-base font-semibold text-black mb-2">Teams</h2>

@@ -6,10 +6,7 @@ export function saveAuth({ user, token }) {
 export function getAuth() {
   const userStr = localStorage.getItem("auth_user");
   const token = localStorage.getItem("auth_token");
-  return {
-    user: userStr ? JSON.parse(userStr) : null,
-    token: token || null,
-  };
+  return { user: userStr ? JSON.parse(userStr) : null, token: token || null };
 }
 
 export function clearAuth() {

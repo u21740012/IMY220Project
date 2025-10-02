@@ -10,7 +10,6 @@ export default function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!email.includes("@")) {
       alert("Email must be valid.");
       return;
@@ -19,7 +18,6 @@ export default function LoginForm() {
       alert("Password must be at least 6 characters.");
       return;
     }
-
     try {
       setBusy(true);
       const res = await fetch("/api/auth/login", {
@@ -33,8 +31,10 @@ export default function LoginForm() {
         setBusy(false);
         return;
       }
+
+      // ✅ Save auth + redirect to profile by _id
       saveAuth({ user: data.user, token: data.token });
-      navigate("/home");
+      navigate(`/profile/${data.user._id}`);
     } catch (err) {
       console.error(err);
       alert("Network error");
@@ -44,9 +44,11 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-lg p-8 bg-white border rounded-lg shadow-md">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-lg p-8 bg-white border rounded-lg shadow-md"
+    >
       <h3 className="text-2xl font-bold mb-6 text-center">Login</h3>
-
       <input
         type="email"
         placeholder="Email"
@@ -55,7 +57,6 @@ export default function LoginForm() {
         className="block w-full mb-4 p-3 border rounded text-base"
         required
       />
-
       <input
         type="password"
         placeholder="Password"
@@ -64,7 +65,6 @@ export default function LoginForm() {
         className="block w-full mb-6 p-3 border rounded text-base"
         required
       />
-
       <button
         type="submit"
         disabled={busy}

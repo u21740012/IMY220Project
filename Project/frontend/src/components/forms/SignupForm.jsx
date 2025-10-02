@@ -5,14 +5,13 @@ import { saveAuth } from "../../utils/auth";
 
 export default function SignupForm() {
   const [username, setUsername] = useState("");
-  const [email, setEmail]       = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (username.trim().length < 2) {
       alert("Username must be at least 2 characters.");
       return;
@@ -25,7 +24,6 @@ export default function SignupForm() {
       alert("Password must be at least 6 characters.");
       return;
     }
-
     try {
       setBusy(true);
       const res = await fetch("/api/auth/signup", {
@@ -39,8 +37,10 @@ export default function SignupForm() {
         setBusy(false);
         return;
       }
+
+      // ✅ Save auth + redirect to profile by _id
       saveAuth({ user: data.user, token: data.token });
-      navigate("/home");
+      navigate(`/profile/${data.user._id}`);
     } catch (err) {
       console.error(err);
       alert("Network error");
@@ -50,9 +50,11 @@ export default function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-lg p-8 bg-white border rounded-lg shadow-md">
+    <form
+      onSubmit={handleSubmit}
+      className="w-full max-w-lg p-8 bg-white border rounded-lg shadow-md"
+    >
       <h3 className="text-2xl font-bold mb-6 text-center">Sign Up</h3>
-
       <input
         type="text"
         placeholder="Username"
@@ -61,7 +63,6 @@ export default function SignupForm() {
         className="block w-full mb-4 p-3 border rounded text-base"
         required
       />
-
       <input
         type="email"
         placeholder="Email"
@@ -70,7 +71,6 @@ export default function SignupForm() {
         className="block w-full mb-4 p-3 border rounded text-base"
         required
       />
-
       <input
         type="password"
         placeholder="Password"
@@ -79,7 +79,6 @@ export default function SignupForm() {
         className="block w-full mb-6 p-3 border rounded text-base"
         required
       />
-
       <button
         type="submit"
         disabled={busy}
@@ -90,3 +89,4 @@ export default function SignupForm() {
     </form>
   );
 }
+

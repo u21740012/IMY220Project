@@ -1,11 +1,30 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../../utils/api";
 
 export default function RecentActivity({ className = "" }) {
-  const items = [
-    { label: "Pushed/Branch", time: "3h ago" },
-    { label: "Pulled/Branch", time: "4h ago" },
-    { label: "Published/Branch", time: "4h ago" },
-  ];
+  const [items, setItems] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const data = await api.get("/api/checkins?limit=6");
+        if (!alive) return;
+        setItems(
+          data.map((c) => ({
+            label: `${c.user?.username || "User"} • ${c.message}`,
+            time: new Date(c.createdAt).toLocaleTimeString(),
+          }))
+        );
+      } catch {
+        setItems([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <section className={`rounded-md border bg-white shadow p-4 ${className}`}>
       <h2 className="text-base font-semibold text-black mb-2">Recent Activity</h2>
@@ -20,5 +39,3 @@ export default function RecentActivity({ className = "" }) {
     </section>
   );
 }
-
-

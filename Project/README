@@ -1,2 +1,2 @@
 Build: docker build -t project-app .
-Run: docker run -p 1337:1337 --name project-container project-app
+Run: docker run -p 1337:1337 --name project-container --env-file backend/.env project-app
