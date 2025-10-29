@@ -11,6 +11,7 @@ async function removeDirIfExists(dir) {
   try { await fsp.rm(dir, { recursive: true, force: true }); } catch {}
 }
 
+// 🔹 Get all users or search
 router.get("/", async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -37,6 +38,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// 🔹 Search
 router.get("/search", async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -54,18 +56,33 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// 🔹 Get user profile (now includes friends)
 router.get("/:id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select(
-      "_id username email bio website location avatar createdAt updatedAt"
-    );
+    const user = await User.findById(req.params.id)
+      .select("_id username email bio website location avatar createdAt updatedAt friends friendRequests")
+      .populate("friends", "_id username email avatar");
+
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json(user);
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      bio: user.bio,
+      website: user.website,
+      location: user.location,
+      avatar: user.avatar,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      friends: user.friends || [],
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// 🔹 Update profile
 router.put("/:id", async (req, res) => {
   try {
     const payload = {
@@ -73,7 +90,7 @@ router.put("/:id", async (req, res) => {
       bio: req.body.bio,
       website: req.body.website,
       location: req.body.location,
-      avatar: req.body.avatar, 
+      avatar: req.body.avatar,
     };
     const updated = await User.findByIdAndUpdate(req.params.id, payload, {
       new: true,
@@ -85,6 +102,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// 🔹 Relationship status
 router.get("/:id/relation", async (req, res) => {
   try {
     const me = await User.findById(req.query.me).select("_id friends friendRequests");
@@ -102,6 +120,7 @@ router.get("/:id/relation", async (req, res) => {
   }
 });
 
+// 🔹 Get friends + requests
 router.get("/:id/friends", async (req, res) => {
   try {
     const u = await User.findById(req.params.id)
@@ -122,6 +141,7 @@ router.get("/:id/friends", async (req, res) => {
   }
 });
 
+// 🔹 Send friend request
 router.post("/:id/friends/request", async (req, res) => {
   try {
     const from = await User.findById(req.query.from).select("_id friends friendRequests");
@@ -157,6 +177,7 @@ router.post("/:id/friends/request", async (req, res) => {
   }
 });
 
+// 🔹 Accept friend request
 router.post("/:id/friends/accept", async (req, res) => {
   try {
     const me = await User.findById(req.query.me).select("_id friends friendRequests");
@@ -175,6 +196,7 @@ router.post("/:id/friends/accept", async (req, res) => {
   }
 });
 
+// 🔹 Reject friend request
 router.post("/:id/friends/reject", async (req, res) => {
   try {
     const me = await User.findById(req.query.me).select("friendRequests");
@@ -191,6 +213,7 @@ router.post("/:id/friends/reject", async (req, res) => {
   }
 });
 
+// 🔹 Remove friend
 router.delete("/:id/friends/:friendId", async (req, res) => {
   try {
     const a = await User.findById(req.params.id).select("friends friendRequests");
@@ -212,6 +235,7 @@ router.delete("/:id/friends/:friendId", async (req, res) => {
   }
 });
 
+// 🔹 Delete user (cascade delete)
 router.delete("/:id", async (req, res) => {
   const userId = req.params.id;
   const uploadsRoot = path.join(__dirname, "..", "uploads", "projects");

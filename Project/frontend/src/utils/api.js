@@ -18,19 +18,24 @@ export function getAuth() {
 async function request(method, url, body, isFormData = false) {
   const { token } = getAuth();
 
-  const headers = {};
+  let headers;
+  if (!isFormData || token) headers = {};
+
   if (!isFormData) headers["Content-Type"] = "application/json";
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(url, {
+  const options = {
     method,
-    headers,
     body: body
       ? isFormData
-        ? body 
+        ? body
         : JSON.stringify(body)
       : undefined,
-  });
+  };
+
+  if (headers) options.headers = headers;
+
+  const res = await fetch(url, options);
 
   let data = null;
   try {
@@ -52,3 +57,4 @@ export const api = {
   put: (url, body, isFormData = false) => request("PUT", url, body, isFormData),
   delete: (url) => request("DELETE", url),
 };
+

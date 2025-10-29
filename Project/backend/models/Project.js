@@ -13,9 +13,10 @@ const ProjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // 🆕
   hashtags: [String],
   createdAt: { type: Date, default: Date.now },
-  files: [FileSchema]
+  files: [FileSchema],
 });
 
 module.exports = mongoose.model("Project", ProjectSchema);
