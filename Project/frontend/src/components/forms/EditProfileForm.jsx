@@ -8,7 +8,7 @@ export default function EditProfileForm({ profile, onSubmit, onCancel, userId, c
   const [bio, setBio] = useState(profile?.bio || "");
   const [website, setWebsite] = useState(profile?.website || "");
   const [location, setLocation] = useState(profile?.location || "");
-  const [avatar, setAvatar] = useState(profile?.avatar || ""); 
+  const [avatar, setAvatar] = useState(profile?.avatar || null); 
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -72,7 +72,9 @@ export default function EditProfileForm({ profile, onSubmit, onCancel, userId, c
       <label className="block text-sm font-medium mb-1">Avatar</label>
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border">
-          {avatar ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" /> : null}
+          {avatar && avatar.trim() !== "" ? (
+            <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+          ) : null}
         </div>
         <input type="file" accept="image/*" onChange={onPickAvatar} className="text-sm" />
       </div>

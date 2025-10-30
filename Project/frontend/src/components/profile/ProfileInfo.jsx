@@ -10,7 +10,7 @@ export default function ProfileInfo({
   onEdit,
 }) {
   const { user: me } = getAuth();
-  const [rel, setRel] = useState("none"); // self|friends|incoming|outgoing|none
+  const [rel, setRel] = useState("none"); 
   const [busy, setBusy] = useState(false);
   const fileRef = useRef(null);
 
@@ -111,7 +111,7 @@ export default function ProfileInfo({
       <div className="flex items-center gap-4">
         <div className="relative">
           <div className="w-32 h-32 rounded-full bg-gray-200 overflow-hidden">
-            {avatar ? (
+            {avatar && avatar.trim() !== "" ? (
               <img src={avatar} alt={`${name}'s avatar`} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-500">

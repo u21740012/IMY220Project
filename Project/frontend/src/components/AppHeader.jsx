@@ -50,11 +50,11 @@ export default function AppHeader() {
         className="w-10 h-10 rounded-full overflow-hidden bg-gray-300 border border-gray-200"
         title={user?.username || "Profile"}
       >
-        {user?.avatar ? (
-          <img src={user.avatar} alt={user.username || "Profile"} className="w-full h-full object-cover" />
-        ) : (
-          <span className="sr-only">Profile</span>
-        )}
+      {user?.avatar && user.avatar.trim() !== "" ? (
+        <img src={user.avatar} alt={user.username || "Profile"} className="w-full h-full object-cover" />
+      ) : (
+        <span className="sr-only">Profile</span>
+      )}
       </button>
     </header>
   );
