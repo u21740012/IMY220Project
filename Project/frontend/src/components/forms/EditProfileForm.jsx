@@ -30,12 +30,24 @@ export default function EditProfileForm({ profile, onSubmit, onCancel, userId, c
 
   const handleDelete = async () => {
     if (!userId) return;
-    if (!window.confirm("Delete your account? This cannot be undone.")) return;
+    if (!window.confirm("Delete this account? This cannot be undone.")) return;
     try {
       setBusy(true);
-      await api.delete(`/api/users/${userId}`);
-      clearAuth();
-      navigate("/");
+
+      // get current logged in user
+      const auth = JSON.parse(localStorage.getItem("auth_user"));
+      const requesterId = auth?._id;
+
+      await api.delete(`/api/users/${userId}?userId=${encodeURIComponent(requesterId)}`);
+
+      // if the logged-in user deleted themselves → clear session
+      if (String(userId) === String(requesterId)) {
+        clearAuth();
+        navigate("/");
+      } else {
+        alert("User account deleted successfully.");
+        navigate("/home");
+      }
     } catch (err) {
       alert(err.message || "Delete failed");
     } finally {

@@ -5,9 +5,13 @@
   "main": "index.js",
   "scripts": {
     "clean": "rmdir /S /Q backend\\dist 2>nul || exit 0",
-    "build:server": "babel backend/server.js -d backend/dist && xcopy backend\\routes backend\\dist\\routes /E /I /Y && xcopy backend\\models backend\\dist\\models /E /I /Y",
+
+    "build:server": "npm run clean && babel backend/server.js -d backend/dist && xcopy backend\\routes backend\\dist\\routes /E /I /Y && xcopy backend\\models backend\\dist\\models /E /I /Y && xcopy backend\\middleware backend\\dist\\middleware /E /I /Y",
+
     "build:client": "webpack",
+
     "build": "npm run build:server && npm run build:client",
+
     "start": "npm run build && node backend/dist/server.js"
   },
   "author": "",

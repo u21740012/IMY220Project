@@ -8,7 +8,9 @@ const Checkin = require("../models/Checkin");
 const router = express.Router();
 
 async function removeDirIfExists(dir) {
-  try { await fsp.rm(dir, { recursive: true, force: true }); } catch {}
+  try {
+    await fsp.rm(dir, { recursive: true, force: true });
+  } catch {}
 }
 
 // 🔹 Get all users or search
@@ -28,7 +30,7 @@ router.get("/", async (req, res) => {
       : {};
 
     let query = User.find(filter).select(
-      "_id username email bio website location avatar createdAt updatedAt"
+      "_id username email bio website location avatar createdAt updatedAt isAdmin"
     );
     if (limit) query = query.limit(limit);
 
@@ -56,11 +58,13 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// 🔹 Get user profile (now includes friends)
+// 🔹 Get user profile (includes friends)
 router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
-      .select("_id username email bio website location avatar createdAt updatedAt friends friendRequests")
+      .select(
+        "_id username email bio website location avatar createdAt updatedAt friends friendRequests isAdmin"
+      )
       .populate("friends", "_id username email avatar");
 
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -76,15 +80,25 @@ router.get("/:id", async (req, res) => {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       friends: user.friends || [],
+      isAdmin: user.isAdmin || false,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔹 Update profile
+// 🔹 Update profile (owner or admin)
 router.put("/:id", async (req, res) => {
   try {
+    const { userId } = req.body; // the requester
+    const requester = userId ? await User.findById(userId) : null;
+
+    if (!requester)
+      return res.status(404).json({ error: "Requester not found" });
+
+    if (!requester.isAdmin && String(requester._id) !== String(req.params.id))
+      return res.status(403).json({ error: "Not authorized" });
+
     const payload = {
       username: req.body.username,
       bio: req.body.bio,
@@ -92,9 +106,13 @@ router.put("/:id", async (req, res) => {
       location: req.body.location,
       avatar: req.body.avatar,
     };
+
     const updated = await User.findByIdAndUpdate(req.params.id, payload, {
       new: true,
-    }).select("_id username email bio website location avatar createdAt updatedAt");
+    }).select(
+      "_id username email bio website location avatar createdAt updatedAt isAdmin"
+    );
+
     if (!updated) return res.status(404).json({ error: "User not found" });
     res.json(updated);
   } catch (err) {
@@ -105,11 +123,14 @@ router.put("/:id", async (req, res) => {
 // 🔹 Relationship status
 router.get("/:id/relation", async (req, res) => {
   try {
-    const me = await User.findById(req.query.me).select("_id friends friendRequests");
+    const me = await User.findById(req.query.me).select(
+      "_id friends friendRequests"
+    );
     const otherId = String(req.params.id);
     if (!me) return res.json({ status: "none" });
     if (String(me._id) === otherId) return res.json({ status: "self" });
-    if (me.friends.some((x) => String(x) === otherId)) return res.json({ status: "friends" });
+    if (me.friends.some((x) => String(x) === otherId))
+      return res.json({ status: "friends" });
     if (me.friendRequests.incoming.some((x) => String(x) === otherId))
       return res.json({ status: "incoming" });
     if (me.friendRequests.outgoing.some((x) => String(x) === otherId))
@@ -144,18 +165,32 @@ router.get("/:id/friends", async (req, res) => {
 // 🔹 Send friend request
 router.post("/:id/friends/request", async (req, res) => {
   try {
-    const from = await User.findById(req.query.from).select("_id friends friendRequests");
-    const to = await User.findById(req.params.id).select("_id friends friendRequests");
-    if (!from || !to) return res.status(404).json({ error: "User not found" });
-    if (String(from._id) === String(to._id)) return res.status(400).json({ error: "Cannot friend yourself" });
+    const from = await User.findById(req.query.from).select(
+      "_id friends friendRequests"
+    );
+    const to = await User.findById(req.params.id).select(
+      "_id friends friendRequests"
+    );
+    if (!from || !to)
+      return res.status(404).json({ error: "User not found" });
+    if (String(from._id) === String(to._id))
+      return res.status(400).json({ error: "Cannot friend yourself" });
 
-    const alreadyFriends = from.friends.some((x) => String(x) === String(to._id));
+    const alreadyFriends = from.friends.some(
+      (x) => String(x) === String(to._id)
+    );
     if (alreadyFriends) return res.json({ ok: true, status: "friends" });
 
-    const theyRequested = from.friendRequests.incoming.some((x) => String(x) === String(to._id));
+    const theyRequested = from.friendRequests.incoming.some(
+      (x) => String(x) === String(to._id)
+    );
     if (theyRequested) {
-      from.friendRequests.incoming = from.friendRequests.incoming.filter((x) => String(x) !== String(to._id));
-      to.friendRequests.outgoing = to.friendRequests.outgoing.filter((x) => String(x) !== String(from._id));
+      from.friendRequests.incoming = from.friendRequests.incoming.filter(
+        (x) => String(x) !== String(to._id)
+      );
+      to.friendRequests.outgoing = to.friendRequests.outgoing.filter(
+        (x) => String(x) !== String(from._id)
+      );
       from.friends.push(to._id);
       to.friends.push(from._id);
       await from.save();
@@ -163,14 +198,12 @@ router.post("/:id/friends/request", async (req, res) => {
       return res.json({ ok: true, status: "friends" });
     }
 
-    if (!from.friendRequests.outgoing.some((x) => String(x) === String(to._id))) {
+    if (!from.friendRequests.outgoing.some((x) => String(x) === String(to._id)))
       from.friendRequests.outgoing.push(to._id);
-      await from.save();
-    }
-    if (!to.friendRequests.incoming.some((x) => String(x) === String(from._id))) {
+    if (!to.friendRequests.incoming.some((x) => String(x) === String(from._id)))
       to.friendRequests.incoming.push(from._id);
-      await to.save();
-    }
+    await from.save();
+    await to.save();
     res.json({ ok: true, status: "outgoing" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -180,14 +213,24 @@ router.post("/:id/friends/request", async (req, res) => {
 // 🔹 Accept friend request
 router.post("/:id/friends/accept", async (req, res) => {
   try {
-    const me = await User.findById(req.query.me).select("_id friends friendRequests");
-    const from = await User.findById(req.query.from).select("_id friends friendRequests");
+    const me = await User.findById(req.query.me).select(
+      "_id friends friendRequests"
+    );
+    const from = await User.findById(req.query.from).select(
+      "_id friends friendRequests"
+    );
     if (!me || !from) return res.status(404).json({ error: "User not found" });
 
-    me.friendRequests.incoming = me.friendRequests.incoming.filter((x) => String(x) !== String(from._id));
-    from.friendRequests.outgoing = from.friendRequests.outgoing.filter((x) => String(x) !== String(me._id));
-    if (!me.friends.some((x) => String(x) === String(from._id))) me.friends.push(from._id);
-    if (!from.friends.some((x) => String(x) === String(me._id))) from.friends.push(me._id);
+    me.friendRequests.incoming = me.friendRequests.incoming.filter(
+      (x) => String(x) !== String(from._id)
+    );
+    from.friendRequests.outgoing = from.friendRequests.outgoing.filter(
+      (x) => String(x) !== String(me._id)
+    );
+    if (!me.friends.some((x) => String(x) === String(from._id)))
+      me.friends.push(from._id);
+    if (!from.friends.some((x) => String(x) === String(me._id)))
+      from.friends.push(me._id);
     await me.save();
     await from.save();
     res.json({ ok: true, status: "friends" });
@@ -203,8 +246,12 @@ router.post("/:id/friends/reject", async (req, res) => {
     const from = await User.findById(req.query.from).select("friendRequests");
     if (!me || !from) return res.status(404).json({ error: "User not found" });
 
-    me.friendRequests.incoming = me.friendRequests.incoming.filter((x) => String(x) !== String(req.query.from));
-    from.friendRequests.outgoing = from.friendRequests.outgoing.filter((x) => String(x) !== String(req.query.me));
+    me.friendRequests.incoming = me.friendRequests.incoming.filter(
+      (x) => String(x) !== String(req.query.from)
+    );
+    from.friendRequests.outgoing = from.friendRequests.outgoing.filter(
+      (x) => String(x) !== String(req.query.me)
+    );
     await me.save();
     await from.save();
     res.json({ ok: true, status: "none" });
@@ -216,16 +263,28 @@ router.post("/:id/friends/reject", async (req, res) => {
 // 🔹 Remove friend
 router.delete("/:id/friends/:friendId", async (req, res) => {
   try {
-    const a = await User.findById(req.params.id).select("friends friendRequests");
-    const b = await User.findById(req.params.friendId).select("friends friendRequests");
+    const a = await User.findById(req.params.id).select(
+      "friends friendRequests"
+    );
+    const b = await User.findById(req.params.friendId).select(
+      "friends friendRequests"
+    );
     if (!a || !b) return res.status(404).json({ error: "User not found" });
 
     a.friends = a.friends.filter((x) => String(x) !== String(b._id));
     b.friends = b.friends.filter((x) => String(x) !== String(a._id));
-    a.friendRequests.incoming = a.friendRequests.incoming.filter((x) => String(x) !== String(b._id));
-    a.friendRequests.outgoing = a.friendRequests.outgoing.filter((x) => String(x) !== String(b._id));
-    b.friendRequests.incoming = b.friendRequests.incoming.filter((x) => String(x) !== String(a._id));
-    b.friendRequests.outgoing = b.friendRequests.outgoing.filter((x) => String(x) !== String(a._id));
+    a.friendRequests.incoming = a.friendRequests.incoming.filter(
+      (x) => String(x) !== String(b._id)
+    );
+    a.friendRequests.outgoing = a.friendRequests.outgoing.filter(
+      (x) => String(x) !== String(b._id)
+    );
+    b.friendRequests.incoming = b.friendRequests.incoming.filter(
+      (x) => String(x) !== String(a._id)
+    );
+    b.friendRequests.outgoing = b.friendRequests.outgoing.filter(
+      (x) => String(x) !== String(a._id)
+    );
     await a.save();
     await b.save();
 
@@ -235,31 +294,60 @@ router.delete("/:id/friends/:friendId", async (req, res) => {
   }
 });
 
-// 🔹 Delete user (cascade delete)
+// 🔹 Delete user (owner or admin, cascade delete)
 router.delete("/:id", async (req, res) => {
-  const userId = req.params.id;
+  const userId = req.params.id; // user being deleted
+  const requesterId = req.query.userId || req.body.userId; // who performs the deletion
   const uploadsRoot = path.join(__dirname, "..", "uploads", "projects");
+
   try {
+    const requester = requesterId ? await User.findById(requesterId) : null;
+    if (!requester)
+      return res.status(404).json({ error: "Requester not found" });
+
+    // Only admin or self can delete
+    if (!requester.isAdmin && String(requester._id) !== String(userId))
+      return res.status(403).json({ error: "Not authorized" });
+
+    // Cascade delete projects + checkins
     const ownedProjects = await Project.find({ owner: userId }).select("_id");
     const ownedIds = ownedProjects.map((p) => p._id);
-    const delOwnedCheckins = await Checkin.deleteMany({ project: { $in: ownedIds } });
+    const delOwnedCheckins = await Checkin.deleteMany({
+      project: { $in: ownedIds },
+    });
     const delProjects = await Project.deleteMany({ _id: { $in: ownedIds } });
+
+    // Remove project directories
     for (const p of ownedProjects) {
       await removeDirIfExists(path.join(uploadsRoot, String(p._id)));
     }
-    await Project.updateMany({ members: userId }, { $pull: { members: userId } });
-    const delUserCheckinsElsewhere = await Checkin.deleteMany({ user: userId });
+
+    // Remove user from collaborators, friends, requests, and their checkins
+    await Project.updateMany(
+      { collaborators: userId },
+      { $pull: { collaborators: userId } }
+    );
+    const delUserCheckinsElsewhere = await Checkin.deleteMany({
+      user: userId,
+    });
 
     await User.updateMany(
       { friends: userId },
-      { $pull: { friends: userId, "friendRequests.incoming": userId, "friendRequests.outgoing": userId } }
+      {
+        $pull: {
+          friends: userId,
+          "friendRequests.incoming": userId,
+          "friendRequests.outgoing": userId,
+        },
+      }
     );
 
     const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) return res.status(404).json({ error: "User not found" });
 
     res.json({
-      message: "User and related data deleted",
+      ok: true,
+      message: `${requester.isAdmin ? "Admin" : "User"} deleted the account successfully.`,
       removed: {
         projects: delProjects.deletedCount || 0,
         projectCheckins: delOwnedCheckins.deletedCount || 0,

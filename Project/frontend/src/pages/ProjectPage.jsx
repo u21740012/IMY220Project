@@ -7,7 +7,7 @@ import Messages from "../components/projects/Messages";
 import CreateProjectForm from "../components/forms/CreateProjectForm";
 import EditProjectForm from "../components/forms/EditProjectForm";
 import ProjectPreview from "../components/common/ProjectPreview";
-import CollaboratorsList from "../components/projects/CollaboratorsList"; // 🆕
+import CollaboratorsList from "../components/projects/CollaboratorsList";
 import { api, getAuth } from "../utils/api";
 
 export default function ProjectPage() {
@@ -61,20 +61,20 @@ export default function ProjectPage() {
   // Select current project
   // -----------------------------
   const selected = useMemo(
-    () =>
-      projects.find((p) => String(p._id) === String(selectedId)) || projects[0],
+    () => projects.find((p) => String(p._id) === String(selectedId)) || projects[0],
     [projects, selectedId]
   );
 
+  // 🧩 Admin override
   const isOwner = (p) => {
     if (!user?._id || !p) return false;
-    const ownerId =
-      typeof p.owner === "object" && p.owner ? p.owner._id : p.owner;
+    if (user.isAdmin) return true;
+    const ownerId = typeof p.owner === "object" ? p.owner._id : p.owner;
     return String(ownerId) === String(user._id);
   };
 
   // -----------------------------
-  // Load checkins (messages)
+  // Load checkins
   // -----------------------------
   useEffect(() => {
     if (!selected?._id) return;
@@ -99,7 +99,7 @@ export default function ProjectPage() {
   }, [selected?._id]);
 
   // -----------------------------
-  // Load project files
+  // Load files
   // -----------------------------
   useEffect(() => {
     if (!selected?._id) return;
@@ -132,9 +132,7 @@ export default function ProjectPage() {
         description: created.description || "Project",
         owner: created.owner,
         repo: created.repo || "",
-        hashtags: Array.isArray(created.hashtags)
-          ? created.hashtags
-          : [],
+        hashtags: Array.isArray(created.hashtags) ? created.hashtags : [],
       };
       setProjects((prev) => [newProj, ...prev]);
       setSelectedId(newProj._id);
@@ -151,7 +149,10 @@ export default function ProjectPage() {
   const handleEdit = async (payload) => {
     if (!selected?._id) return;
     try {
-      const updated = await api.put(`/api/projects/${selected._id}`, payload);
+      const updated = await api.put(`/api/projects/${selected._id}`, {
+        ...payload,
+        userId: user?._id, // backend knows who edits
+      });
       setProjects((prev) =>
         prev.map((p) =>
           String(p._id) === String(updated._id)
@@ -161,9 +162,7 @@ export default function ProjectPage() {
                 description: updated.description || "Project",
                 owner: updated.owner,
                 repo: updated.repo || "",
-                hashtags: Array.isArray(updated.hashtags)
-                  ? updated.hashtags
-                  : [],
+                hashtags: Array.isArray(updated.hashtags) ? updated.hashtags : [],
               }
             : p
         )
@@ -175,20 +174,18 @@ export default function ProjectPage() {
   };
 
   // -----------------------------
-  // Delete project
+  // Delete project (owner or admin)
   // -----------------------------
   const handleDeleteProject = async (projId) => {
     const proj = projects.find((p) => String(p._id) === String(projId));
     if (!proj || !isOwner(proj)) return;
 
-    if (
-      !window.confirm(`Delete project "${proj.name}"? This cannot be undone.`)
-    )
+    if (!window.confirm(`Delete project "${proj.name}"? This cannot be undone.`))
       return;
 
     try {
       await api.delete(
-        `/api/projects/${projId}?owner=${encodeURIComponent(user._id)}`
+        `/api/projects/${projId}?userId=${encodeURIComponent(user._id)}`
       );
       setProjects((prev) => prev.filter((p) => String(p._id) !== String(projId)));
 
@@ -287,10 +284,7 @@ export default function ProjectPage() {
         {selected && (
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-6">
-              <ProjectDetails
-                project={selected}
-                onEdit={() => setShowEdit(true)}
-              />
+              <ProjectDetails project={selected} onEdit={() => setShowEdit(true)} />
               <FilesList
                 files={files}
                 projectId={selected._id}
@@ -298,7 +292,6 @@ export default function ProjectPage() {
               />
             </div>
 
-            {/* Right panel: Messages + Collaborators */}
             <aside className="md:col-span-1 space-y-6">
               <Messages items={checkins} />
               <CollaboratorsList
@@ -310,7 +303,6 @@ export default function ProjectPage() {
         )}
       </main>
 
-      {/* Modals */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/10">
           <CreateProjectForm

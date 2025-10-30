@@ -1,3 +1,4 @@
+//backend/server.js
 require("dotenv").config({
   path: require("path").join(__dirname, "../.env")
 });
@@ -14,6 +15,7 @@ app.use("/api/projects", require("./routes/projects"));
 app.use("/api/checkins", require("./routes/checkins"));
 app.use("/api/upload", require("./routes/upload"));
 app.use("/api/project-files", require("./routes/projectFiles"));
+app.use("/api/admin", require("./routes/admin"));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 const DIST_DIR = path.join(__dirname);
 app.use(express.static(DIST_DIR));

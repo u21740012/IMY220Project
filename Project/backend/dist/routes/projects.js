@@ -12,16 +12,18 @@ async function rmDir(p) {
   } catch {}
 }
 
-// Utility: check access (owner or collaborator)
-function canAccess(project, userId) {
+// Utility: check access (owner, collaborator, or admin)
+function canAccess(project, user) {
   const ownerId = String(project.owner._id || project.owner);
-  const collabIds = (project.collaborators || []).map((c) =>
-    String(c._id || c)
-  );
-  return ownerId === String(userId) || collabIds.includes(String(userId));
+  const collabIds = (project.collaborators || []).map((c) => String(c._id || c));
+  if (!user) return false;
+  if (user.isAdmin) return true;
+  return ownerId === String(user._id) || collabIds.includes(String(user._id));
 }
 
+// ───────────────────────────────
 // Create new project
+// ───────────────────────────────
 router.post("/", async (req, res) => {
   try {
     const body = req.body || {};
@@ -32,37 +34,36 @@ router.post("/", async (req, res) => {
       hashtags: Array.isArray(body.hashtags) ? body.hashtags : [],
       image: body.image || "",
       owner: body.owner,
-      collaborators: [], 
+      collaborators: [],
     });
     await project.save();
-    const populated = await Project.findById(project._id).populate(
-      "owner",
-      "username"
-    );
+    const populated = await Project.findById(project._id).populate("owner", "username");
     res.json(populated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// ───────────────────────────────
 // Get projects list
+// ───────────────────────────────
 router.get("/", async (req, res) => {
   try {
     const filter = {};
     const userId = req.query.userId || req.query.owner;
     const limit = Math.min(parseInt(req.query.limit || "0", 10) || 0, 50);
 
+    const requester = userId ? await User.findById(userId) : null;
+
+    // Admins see all projects
     let query = Project.find(
-      userId
-        ? {
-            $or: [
-              { owner: userId },
-              { collaborators: userId }, 
-            ],
-          }
+      requester?.isAdmin
+        ? {}
+        : userId
+        ? { $or: [{ owner: userId }, { collaborators: userId }] }
         : filter
     )
-      .populate("owner", "username")
+      .populate("owner", "username email")
       .sort({ createdAt: -1 });
 
     if (limit) query = query.limit(limit);
@@ -74,7 +75,9 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ───────────────────────────────
 // Search projects
+// ───────────────────────────────
 router.get("/search", async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -94,16 +97,19 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// ───────────────────────────────
 // Get project by ID (with access control)
+// ───────────────────────────────
 router.get("/:id", async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
-      .populate("owner", "username")
+      .populate("owner", "username email isAdmin")
       .populate("collaborators", "username email");
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const userId = req.query.userId;
-    if (userId && !canAccess(project, userId))
+    const user = userId ? await User.findById(userId) : null;
+    if (user && !canAccess(project, user))
       return res.status(403).json({ error: "Access denied" });
 
     res.json(project);
@@ -112,53 +118,53 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update project (owner or collaborator)
+// ───────────────────────────────
+// Update project (owner, collaborator, or admin)
+// ───────────────────────────────
 router.put("/:id", async (req, res) => {
   try {
     const updates = req.body || {};
     const project = await Project.findById(req.params.id)
-      .populate("owner", "username")
-      .populate("collaborators", "username");
+      .populate("owner", "username email isAdmin")
+      .populate("collaborators", "username email");
     if (!project) return res.status(404).json({ error: "Project not found" });
 
     const userId = updates.userId || req.query.userId;
-    if (userId && !canAccess(project, userId))
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "Invalid user" });
+
+    if (!canAccess(project, user))
       return res.status(403).json({ error: "Not authorized" });
 
     Object.assign(project, updates);
     await project.save();
 
-    const updated = await Project.findById(project._id).populate(
-      "owner",
-      "username"
-    );
+    const updated = await Project.findById(project._id).populate("owner", "username email");
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Delete project (owner only)
+// ───────────────────────────────
+// Delete project (owner or admin)
+// ───────────────────────────────
 router.delete("/:id", async (req, res) => {
   try {
     const proj = await Project.findById(req.params.id);
     if (!proj) return res.status(404).json({ error: "Project not found" });
 
-    if (String(proj.owner) !== String(req.query.owner))
-      return res
-        .status(403)
-        .json({ error: "Only the owner can delete this project" });
+    const userId = req.query.owner || req.query.userId;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "Invalid user" });
+
+    if (!user.isAdmin && String(proj.owner) !== String(userId))
+      return res.status(403).json({ error: "Only the owner or admin can delete this project" });
 
     await Checkin.deleteMany({ project: proj._id });
     await Project.deleteOne({ _id: proj._id });
 
-    const dir = path.join(
-      __dirname,
-      "..",
-      "uploads",
-      "projects",
-      String(proj._id)
-    );
+    const dir = path.join(__dirname, "..", "uploads", "projects", String(proj._id));
     await rmDir(dir);
 
     res.json({ ok: true });
@@ -167,20 +173,24 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Add collaborator (must be a friend)
+// ───────────────────────────────
+// Add collaborator (must be a friend, or admin can force add)
+// ───────────────────────────────
 router.post("/:id/add-collaborator", async (req, res) => {
   try {
     const { userId, collaboratorId } = req.body;
     const project = await Project.findById(req.params.id).populate("owner");
 
     if (!project) return res.status(404).json({ error: "Project not found" });
-    if (String(project.owner._id) !== String(userId))
-      return res
-        .status(403)
-        .json({ error: "Only the owner can add collaborators" });
 
     const user = await User.findById(userId);
-    if (!user || !user.friends.includes(collaboratorId))
+    if (!user) return res.status(404).json({ error: "Invalid user" });
+
+    // Owner or admin only
+    if (!user.isAdmin && String(project.owner._id) !== String(userId))
+      return res.status(403).json({ error: "Only the owner or admin can add collaborators" });
+
+    if (!user.isAdmin && !user.friends.includes(collaboratorId))
       return res.status(403).json({ error: "Must be friends first" });
 
     if (!project.collaborators.includes(collaboratorId)) {
@@ -188,37 +198,34 @@ router.post("/:id/add-collaborator", async (req, res) => {
       await project.save();
     }
 
-    const populated = await Project.findById(project._id).populate(
-      "collaborators",
-      "username email"
-    );
+    const populated = await Project.findById(project._id).populate("collaborators", "username email");
     res.json(populated.collaborators);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Remove collaborator
+// ───────────────────────────────
+// Remove collaborator (owner or admin)
+// ───────────────────────────────
 router.post("/:id/remove-collaborator", async (req, res) => {
   try {
     const { userId, collaboratorId } = req.body;
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ error: "Project not found" });
 
-    if (String(project.owner) !== String(userId))
-      return res
-        .status(403)
-        .json({ error: "Only the owner can remove collaborators" });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "Invalid user" });
+
+    if (!user.isAdmin && String(project.owner) !== String(userId))
+      return res.status(403).json({ error: "Only the owner or admin can remove collaborators" });
 
     project.collaborators = project.collaborators.filter(
       (id) => String(id) !== String(collaboratorId)
     );
     await project.save();
 
-    const populated = await Project.findById(project._id).populate(
-      "collaborators",
-      "username"
-    );
+    const populated = await Project.findById(project._id).populate("collaborators", "username email");
     res.json(populated.collaborators);
   } catch (err) {
     res.status(500).json({ error: err.message });

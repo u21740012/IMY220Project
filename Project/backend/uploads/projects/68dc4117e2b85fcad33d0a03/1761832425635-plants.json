@@ -1,0 +1,100 @@
+{
+  "plants": [
+    {
+      "plantId": "P001",
+      "name": "Snake Plant",
+      "species": "Sansevieria trifasciata",
+      "type": "Succulent",
+      "origin": "West Africa",
+      "care": {
+        "water": "Every 2-3 weeks",
+        "sunlight": "Indirect light",
+        "soil": "Well-draining potting mix"
+      }
+    },
+    {
+      "plantId": "P002",
+      "name": "Peace Lily",
+      "species": "Spathiphyllum wallisii",
+      "type": "Flowering",
+      "origin": "Tropical Americas",
+      "care": {
+        "water": "Weekly",
+        "sunlight": "Low to medium light",
+        "soil": "Moist, well-draining soil"
+      }
+    },
+    {
+      "plantId": "P003",
+      "name": "Aloe Vera",
+      "species": "Aloe barbadensis miller",
+      "type": "Medicinal Succulent",
+      "origin": "Arabian Peninsula",
+      "care": {
+        "water": "Every 3 weeks",
+        "sunlight": "Bright indirect sunlight",
+        "soil": "Sandy, well-drained soil"
+      }
+    },
+    {
+      "plantId": "P004",
+      "name": "Monstera",
+      "species": "Monstera deliciosa",
+      "type": "Climbing Tropical",
+      "origin": "Central America",
+      "care": {
+        "water": "Every 1-2 weeks",
+        "sunlight": "Bright indirect light",
+        "soil": "Peat-based, well-draining"
+      }
+    },
+    {
+      "plantId": "P005",
+      "name": "Basil",
+      "species": "Ocimum basilicum",
+      "type": "Herb",
+      "origin": "India",
+      "care": {
+        "water": "Every 2-3 days",
+        "sunlight": "Full sun",
+        "soil": "Rich, moist soil"
+      }
+    },
+    {
+      "plantId": "P006",
+      "name": "Japanese Maple",
+      "species": "Acer palmatum",
+      "type": "Tree",
+      "origin": "Japan, Korea, China",
+      "care": {
+        "water": "Weekly (more in summer)",
+        "sunlight": "Partial shade",
+        "soil": "Acidic, well-drained soil"
+      }
+    },
+    {
+      "plantId": "P007",
+      "name": "Cactus",
+      "species": "Carnegiea gigantea",
+      "type": "Succulent",
+      "origin": "Sonoran Desert",
+      "care": {
+        "water": "Once a month",
+        "sunlight": "Full sun",
+        "soil": "Dry, sandy soil"
+      }
+    },
+    {
+      "plantId": "P008",
+      "name": "Orchid",
+      "species": "Phalaenopsis",
+      "type": "Flowering",
+      "origin": "Southeast Asia",
+      "care": {
+        "water": "Weekly",
+        "sunlight": "Indirect light",
+        "soil": "Orchid bark mix"
+      }
+    }
+  ]
+}

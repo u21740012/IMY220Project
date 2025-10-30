@@ -10,7 +10,9 @@ import { api, getAuth } from "../utils/api";
 export default function ProfilePage() {
   const { id } = useParams();
   const { user: me } = getAuth();
-  const isOwner = Boolean(me?._id && String(me._id) === String(id));
+
+  // 🧩 Admins can access all profiles
+  const isOwner = Boolean(me?._id && (String(me._id) === String(id) || me.isAdmin));
 
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -24,7 +26,7 @@ export default function ProfilePage() {
       try {
         const [userRes, projectsRes] = await Promise.all([
           api.get(`/api/users/${id}`),
-          api.get(`/api/projects?owner=${encodeURIComponent(id)}`),
+          api.get(`/api/projects?owner=${encodeURIComponent(id)}&userId=${encodeURIComponent(me?._id || "")}`),
         ]);
         if (!alive) return;
 
@@ -56,16 +58,17 @@ export default function ProfilePage() {
     return () => {
       alive = false;
     };
-  }, [id]);
+  }, [id, me?._id]);
 
   const onSaveProfile = async (p) => {
     try {
       const updatedRes = await api.put(`/api/users/${profile._id}`, {
+        userId: me?._id, // tell backend who is updating
         username: p.name,
         bio: p.bio,
         website: p.website,
         location: p.location,
-        avatar: p.avatar, // base64
+        avatar: p.avatar,
       });
       const updated = updatedRes.user || updatedRes;
       setProfile((prev) => ({
