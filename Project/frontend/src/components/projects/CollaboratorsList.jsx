@@ -14,11 +14,9 @@ export default function CollaboratorsList({ projectId, ownerId }) {
     if (!projectId || !user?._id) return;
     (async () => {
       try {
-        // Get your own user info, assuming it contains a 'friends' array
         const me = await api.get(`/api/users/${user._id}`);
         setFriends(me.friends || []);
 
-        // Get project info
         const project = await api.get(`/api/projects/${projectId}?userId=${user._id}`);
         setCollabs(project.collaborators || []);
       } catch (err) {

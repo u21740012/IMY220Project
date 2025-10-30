@@ -21,7 +21,7 @@ export default function AdminTabs() {
   const deleteItem = async (endpoint, id) => {
     if (!window.confirm("Are you sure?")) return;
     await api.delete(`/api/admin/${endpoint}/${id}`);
-    setTab((t) => t); // refresh
+    setTab((t) => t); 
   };
 
   return (

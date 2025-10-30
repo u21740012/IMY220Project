@@ -7,19 +7,19 @@ RUN npm ci || npm install
 COPY .babelrc ./
 COPY webpack.config.js ./
 COPY postcss.config.js tailwind.config.js ./
-COPY frontend ./frontend
-COPY backend  ./backend
 
-#Build backend 
+COPY frontend ./frontend
+COPY backend ./backend
+COPY backend/.env ./backend/.env
+
+RUN cd backend && npm ci || npm install
 
 RUN npx babel backend/server.js -d backend/dist \
  && mkdir -p backend/dist/routes backend/dist/models \
  && cp -r backend/routes/.  backend/dist/routes/ \
  && cp -r backend/models/.  backend/dist/models/
 
-#Build frontend 
 RUN npm run build:client || npx webpack --config webpack.config.js
-
 
 RUN set -eux; \
     mkdir -p /app/frontend-build; \
@@ -37,10 +37,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=1337
 
-COPY backend/package.json backend/package-lock.json* ./backend/
-RUN cd backend && (npm ci --omit=dev || npm install --omit=dev)
-
+COPY --from=builder /app/backend/package.json /app/backend/package-lock.json* ./backend/
+COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/backend/.env ./backend/.env
+
 RUN mkdir -p ./backend/dist/public
 COPY --from=builder /app/frontend-build ./backend/dist/public
 

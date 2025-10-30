@@ -6,7 +6,6 @@ const fs = require("fs");
 
 const router = express.Router();
 
-// ✅ Always store uploads in backend/uploads (even after build)
 const uploadDir = path.join(process.cwd(), "backend/uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 

@@ -32,7 +32,6 @@ export default function LoginForm() {
         return;
       }
 
-      // ✅ Save auth + redirect to profile by _id
       saveAuth({ user: data.user, token: data.token });
       navigate(`/profile/${data.user._id}`);
     } catch (err) {

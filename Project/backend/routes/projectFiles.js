@@ -10,12 +10,10 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// ✅ Always anchor uploads to real project root, even after build
 const baseDir = path.join(process.cwd(), "backend/uploads/projects");
 if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
 console.log("📁 Upload base path:", baseDir);
 
-// ✅ Multer storage — each project gets its own folder
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     try {
@@ -34,15 +32,11 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Utility
 async function findUser(userId) {
   if (!userId) return null;
   return await User.findById(userId);
 }
 
-// ───────────────────────────────
-// Upload / Check-in
-// ───────────────────────────────
 router.post("/:projectId/checkin", upload.single("file"), async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -92,9 +86,6 @@ router.post("/:projectId/checkin", upload.single("file"), async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Download (any collaborator or owner)
-// ───────────────────────────────
 router.get("/:projectId/download/:storedName", async (req, res) => {
   try {
     const { projectId, storedName } = req.params;
@@ -119,9 +110,6 @@ router.get("/:projectId/download/:storedName", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// List files (for UI display)
-// ───────────────────────────────
 router.get("/:projectId/files", async (req, res) => {
   try {
     const project = await Project.findById(req.params.projectId)
@@ -136,9 +124,6 @@ router.get("/:projectId/files", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Check-out (lock file)
-// ───────────────────────────────
 router.post("/:projectId/checkout/:filename", async (req, res) => {
   try {
     const { projectId, filename } = req.params;
@@ -171,9 +156,6 @@ router.post("/:projectId/checkout/:filename", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Delete (owner, collaborator, admin)
-// ───────────────────────────────
 router.delete("/:projectId/files/:filename", async (req, res) => {
   try {
     const { projectId, filename } = req.params;

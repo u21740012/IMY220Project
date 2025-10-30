@@ -12,7 +12,6 @@ async function rmDir(p) {
   } catch {}
 }
 
-// Utility: check access (owner, collaborator, or admin)
 function canAccess(project, user) {
   const ownerId = String(project.owner._id || project.owner);
   const collabIds = (project.collaborators || []).map((c) => String(c._id || c));
@@ -21,9 +20,6 @@ function canAccess(project, user) {
   return ownerId === String(user._id) || collabIds.includes(String(user._id));
 }
 
-// ───────────────────────────────
-// Create new project
-// ───────────────────────────────
 router.post("/", async (req, res) => {
   try {
     const body = req.body || {};
@@ -44,9 +40,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Get projects list
-// ───────────────────────────────
 router.get("/", async (req, res) => {
   try {
     const filter = {};
@@ -55,7 +48,6 @@ router.get("/", async (req, res) => {
 
     const requester = userId ? await User.findById(userId) : null;
 
-    // Admins see all projects
     let query = Project.find(
       requester?.isAdmin
         ? {}
@@ -75,9 +67,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Search projects
-// ───────────────────────────────
 router.get("/search", async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -97,9 +86,6 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Get project by ID (with access control)
-// ───────────────────────────────
 router.get("/:id", async (req, res) => {
   try {
     const project = await Project.findById(req.params.id)
@@ -118,9 +104,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Update project (owner, collaborator, or admin)
-// ───────────────────────────────
 router.put("/:id", async (req, res) => {
   try {
     const updates = req.body || {};
@@ -146,9 +129,6 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Delete project (owner or admin)
-// ───────────────────────────────
 router.delete("/:id", async (req, res) => {
   try {
     const proj = await Project.findById(req.params.id);
@@ -173,9 +153,6 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Add collaborator (must be a friend, or admin can force add)
-// ───────────────────────────────
 router.post("/:id/add-collaborator", async (req, res) => {
   try {
     const { userId, collaboratorId } = req.body;
@@ -186,7 +163,6 @@ router.post("/:id/add-collaborator", async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "Invalid user" });
 
-    // Owner or admin only
     if (!user.isAdmin && String(project.owner._id) !== String(userId))
       return res.status(403).json({ error: "Only the owner or admin can add collaborators" });
 
@@ -205,9 +181,6 @@ router.post("/:id/add-collaborator", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// Remove collaborator (owner or admin)
-// ───────────────────────────────
 router.post("/:id/remove-collaborator", async (req, res) => {
   try {
     const { userId, collaboratorId } = req.body;

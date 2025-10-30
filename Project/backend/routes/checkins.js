@@ -2,10 +2,6 @@ const express = require("express");
 const Checkin = require("../models/Checkin");
 const router = express.Router();
 
-/**
- * POST /api/checkins
- * body: { project, user, message }
- */
 router.post("/", async (req, res) => {
   try {
     const checkin = new Checkin(req.body);
@@ -19,11 +15,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-/**
- * GET /api/checkins
- * Optional: ?limit=20
- * Returns global activity (latest first)
- */
 router.get("/", async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || "20", 10) || 20, 50);
@@ -38,9 +29,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-/**
- * GET /api/checkins/project/:projectId
- */
 router.get("/project/:projectId", async (req, res) => {
   try {
     const items = await Checkin.find({ project: req.params.projectId })
@@ -52,9 +40,6 @@ router.get("/project/:projectId", async (req, res) => {
   }
 });
 
-/**
- * GET /api/checkins/user/:userId
- */
 router.get("/user/:userId", async (req, res) => {
   try {
     const items = await Checkin.find({ user: req.params.userId })

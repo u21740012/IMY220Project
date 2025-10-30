@@ -22,9 +22,6 @@ export default function ProjectPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
-  // -----------------------------
-  // Load all projects
-  // -----------------------------
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -57,15 +54,11 @@ export default function ProjectPage() {
     };
   }, [id, user?._id, navigate]);
 
-  // -----------------------------
-  // Select current project
-  // -----------------------------
   const selected = useMemo(
     () => projects.find((p) => String(p._id) === String(selectedId)) || projects[0],
     [projects, selectedId]
   );
 
-  // 🧩 Admin override
   const isOwner = (p) => {
     if (!user?._id || !p) return false;
     if (user.isAdmin) return true;
@@ -73,9 +66,6 @@ export default function ProjectPage() {
     return String(ownerId) === String(user._id);
   };
 
-  // -----------------------------
-  // Load checkins
-  // -----------------------------
   useEffect(() => {
     if (!selected?._id) return;
     let alive = true;
@@ -98,9 +88,6 @@ export default function ProjectPage() {
     };
   }, [selected?._id]);
 
-  // -----------------------------
-  // Load files
-  // -----------------------------
   useEffect(() => {
     if (!selected?._id) return;
     let alive = true;
@@ -117,9 +104,6 @@ export default function ProjectPage() {
     };
   }, [selected?._id]);
 
-  // -----------------------------
-  // Create project
-  // -----------------------------
   const handleCreate = async (payload) => {
     try {
       const created = await api.post("/api/projects", {
@@ -143,15 +127,12 @@ export default function ProjectPage() {
     }
   };
 
-  // -----------------------------
-  // Edit project
-  // -----------------------------
   const handleEdit = async (payload) => {
     if (!selected?._id) return;
     try {
       const updated = await api.put(`/api/projects/${selected._id}`, {
         ...payload,
-        userId: user?._id, // backend knows who edits
+        userId: user?._id, 
       });
       setProjects((prev) =>
         prev.map((p) =>
@@ -173,9 +154,6 @@ export default function ProjectPage() {
     }
   };
 
-  // -----------------------------
-  // Delete project (owner or admin)
-  // -----------------------------
   const handleDeleteProject = async (projId) => {
     const proj = projects.find((p) => String(p._id) === String(projId));
     if (!proj || !isOwner(proj)) return;
@@ -201,14 +179,10 @@ export default function ProjectPage() {
     }
   };
 
-  // -----------------------------
-  // Render
-  // -----------------------------
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <AppHeader />
       <main className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Header */}
         <header className="flex items-center justify-between">
           <h1 className="text-4xl font-extrabold tracking-tight text-[#0F2147]">
             Projects
@@ -221,7 +195,6 @@ export default function ProjectPage() {
           </button>
         </header>
 
-        {/* Projects Grid */}
         <section aria-labelledby="current-projects" className="space-y-3">
           <h2 id="current-projects" className="text-lg font-medium text-black">
             Current Projects
@@ -280,7 +253,6 @@ export default function ProjectPage() {
           </div>
         </section>
 
-        {/* Selected project */}
         {selected && (
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-6">

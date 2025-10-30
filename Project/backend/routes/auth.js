@@ -3,14 +3,10 @@ const User = require("../models/User");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 
-// simple token builder (not JWT)
 function makeToken(email) {
   return Buffer.from(`${email}:${Date.now()}`).toString("base64");
 }
 
-// ───────────────────────────────
-// SIGNUP
-// ───────────────────────────────
 router.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -35,9 +31,6 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// LOGIN
-// ───────────────────────────────
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -54,9 +47,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ───────────────────────────────
-// CURRENT USER (token decoding)
-// ───────────────────────────────
 router.get("/me", async (req, res) => {
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;

@@ -8,7 +8,6 @@ const User = require("./models/User");
     await mongoose.connect(process.env.MONGO_URI, { dbName: "IMY220ProjectDB" });
     console.log("Connected to MongoDB");
 
-    // users you want to fix
     const updates = [
       { email: "alice@example.com", newPassword: "password123" },
       { email: "bob@example.com", newPassword: "password123" },
@@ -21,7 +20,6 @@ const User = require("./models/User");
         continue;
       }
 
-      // hash and update
       const hashed = await bcrypt.hash(u.newPassword, 10);
       user.password = hashed;
       await user.save();

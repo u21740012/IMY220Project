@@ -7,9 +7,7 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
   const [busy, setBusy] = useState(false);
   const [workingFile, setWorkingFile] = useState(null);
 
-  // ───────────────────────────────
-  // Upload / check-in (new or updated version)
-  // ───────────────────────────────
+
   const handleUpload = async () => {
     if (!file) return;
     const form = new FormData();
@@ -33,9 +31,6 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
     }
   };
 
-  // ───────────────────────────────
-  // Check-out file (lock)
-  // ───────────────────────────────
   const handleCheckout = async (filename) => {
     try {
       setBusy(true);
@@ -46,7 +41,6 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
         { userId: user._id }
       );
       alert(`Checked out "${filename}" for editing`);
-      // refresh file list
       const refreshed = await api.get(`/api/project-files/${projectId}/files`);
       onUploaded(refreshed);
     } catch (err) {
@@ -56,9 +50,6 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
     }
   };
 
-  // ───────────────────────────────
-  // Download file
-  // ───────────────────────────────
   const handleDownload = async (storedName) => {
     const url = `/api/project-files/${projectId}/download/${encodeURIComponent(
       storedName
@@ -66,9 +57,6 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
     window.open(url, "_blank");
   };
 
-  // ───────────────────────────────
-  // Delete file
-  // ───────────────────────────────
   const handleDelete = async (filename) => {
     if (!window.confirm(`Delete file "${filename}"?`)) return;
     try {
@@ -100,7 +88,6 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
         {busy && <span className="text-xs text-gray-400">Processing...</span>}
       </h3>
 
-      {/* File list */}
       <ul className="text-sm text-gray-800 space-y-2 mb-4">
         {files.map((f) => (
           <li
@@ -165,7 +152,6 @@ export default function FilesList({ files = [], projectId, onUploaded }) {
         )}
       </ul>
 
-      {/* Upload / check-in new version */}
       <div className="flex flex-col sm:flex-row gap-2 items-center">
         <input
           type="file"

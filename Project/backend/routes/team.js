@@ -4,7 +4,6 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// Create new team
 router.post("/", async (req, res) => {
   try {
     const { name, description, owner } = req.body;
@@ -16,7 +15,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get all teams user belongs to
 router.get("/user/:userId", async (req, res) => {
   try {
     const teams = await Team.find({
@@ -28,7 +26,6 @@ router.get("/user/:userId", async (req, res) => {
   }
 });
 
-// Add member
 router.post("/:teamId/add", async (req, res) => {
   try {
     const { userId } = req.body;
@@ -44,7 +41,6 @@ router.post("/:teamId/add", async (req, res) => {
   }
 });
 
-// Remove member
 router.post("/:teamId/remove", async (req, res) => {
   try {
     const { userId } = req.body;

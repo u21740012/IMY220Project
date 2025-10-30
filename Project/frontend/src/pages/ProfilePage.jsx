@@ -11,7 +11,6 @@ export default function ProfilePage() {
   const { id } = useParams();
   const { user: me } = getAuth();
 
-  // 🧩 Admins can access all profiles
   const isOwner = Boolean(me?._id && (String(me._id) === String(id) || me.isAdmin));
 
   const [editing, setEditing] = useState(false);
@@ -63,7 +62,7 @@ export default function ProfilePage() {
   const onSaveProfile = async (p) => {
     try {
       const updatedRes = await api.put(`/api/users/${profile._id}`, {
-        userId: me?._id, // tell backend who is updating
+        userId: me?._id,
         username: p.name,
         bio: p.bio,
         website: p.website,

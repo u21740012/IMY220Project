@@ -13,7 +13,6 @@ async function removeDirIfExists(dir) {
   } catch {}
 }
 
-// 🔹 Get all users or search
 router.get("/", async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -40,7 +39,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 🔹 Search
+//Search
 router.get("/search", async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
@@ -58,7 +57,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// 🔹 Get user profile (includes friends)
+//Get user profile (includes friends)
 router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
@@ -87,10 +86,10 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 🔹 Update profile (owner or admin)
+//Update profile (owner or admin)
 router.put("/:id", async (req, res) => {
   try {
-    const { userId } = req.body; // the requester
+    const { userId } = req.body; 
     const requester = userId ? await User.findById(userId) : null;
 
     if (!requester)
@@ -120,7 +119,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// 🔹 Relationship status
+//Relationship status
 router.get("/:id/relation", async (req, res) => {
   try {
     const me = await User.findById(req.query.me).select(
@@ -141,7 +140,7 @@ router.get("/:id/relation", async (req, res) => {
   }
 });
 
-// 🔹 Get friends + requests
+//Get friends + requests
 router.get("/:id/friends", async (req, res) => {
   try {
     const u = await User.findById(req.params.id)
@@ -162,7 +161,7 @@ router.get("/:id/friends", async (req, res) => {
   }
 });
 
-// 🔹 Send friend request
+//Send friend request
 router.post("/:id/friends/request", async (req, res) => {
   try {
     const from = await User.findById(req.query.from).select(
@@ -210,7 +209,7 @@ router.post("/:id/friends/request", async (req, res) => {
   }
 });
 
-// 🔹 Accept friend request
+//Accept friend request
 router.post("/:id/friends/accept", async (req, res) => {
   try {
     const me = await User.findById(req.query.me).select(
@@ -239,7 +238,7 @@ router.post("/:id/friends/accept", async (req, res) => {
   }
 });
 
-// 🔹 Reject friend request
+// Reject friend request
 router.post("/:id/friends/reject", async (req, res) => {
   try {
     const me = await User.findById(req.query.me).select("friendRequests");
@@ -260,7 +259,7 @@ router.post("/:id/friends/reject", async (req, res) => {
   }
 });
 
-// 🔹 Remove friend
+// Remove friend
 router.delete("/:id/friends/:friendId", async (req, res) => {
   try {
     const a = await User.findById(req.params.id).select(
@@ -294,10 +293,10 @@ router.delete("/:id/friends/:friendId", async (req, res) => {
   }
 });
 
-// 🔹 Delete user (owner or admin, cascade delete)
+// Delete user
 router.delete("/:id", async (req, res) => {
-  const userId = req.params.id; // user being deleted
-  const requesterId = req.query.userId || req.body.userId; // who performs the deletion
+  const userId = req.params.id;
+  const requesterId = req.query.userId || req.body.userId;
   const uploadsRoot = path.join(__dirname, "..", "uploads", "projects");
 
   try {
@@ -305,11 +304,9 @@ router.delete("/:id", async (req, res) => {
     if (!requester)
       return res.status(404).json({ error: "Requester not found" });
 
-    // Only admin or self can delete
     if (!requester.isAdmin && String(requester._id) !== String(userId))
       return res.status(403).json({ error: "Not authorized" });
 
-    // Cascade delete projects + checkins
     const ownedProjects = await Project.find({ owner: userId }).select("_id");
     const ownedIds = ownedProjects.map((p) => p._id);
     const delOwnedCheckins = await Checkin.deleteMany({
@@ -317,12 +314,10 @@ router.delete("/:id", async (req, res) => {
     });
     const delProjects = await Project.deleteMany({ _id: { $in: ownedIds } });
 
-    // Remove project directories
     for (const p of ownedProjects) {
       await removeDirIfExists(path.join(uploadsRoot, String(p._id)));
     }
 
-    // Remove user from collaborators, friends, requests, and their checkins
     await Project.updateMany(
       { collaborators: userId },
       { $pull: { collaborators: userId } }

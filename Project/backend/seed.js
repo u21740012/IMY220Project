@@ -14,7 +14,6 @@ async function seed() {
     await Project.deleteMany({});
     await Checkin.deleteMany({});
 
-    // 🧑‍💻 Admin user
     const admin = new User({
       username: "Admin",
       email: "admin@relink.com",

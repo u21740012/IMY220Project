@@ -8,7 +8,7 @@ export default function EditProfileForm({ profile, onSubmit, onCancel, userId, c
   const [bio, setBio] = useState(profile?.bio || "");
   const [website, setWebsite] = useState(profile?.website || "");
   const [location, setLocation] = useState(profile?.location || "");
-  const [avatar, setAvatar] = useState(profile?.avatar || ""); // base64 dataURL
+  const [avatar, setAvatar] = useState(profile?.avatar || ""); 
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -34,13 +34,11 @@ export default function EditProfileForm({ profile, onSubmit, onCancel, userId, c
     try {
       setBusy(true);
 
-      // get current logged in user
       const auth = JSON.parse(localStorage.getItem("auth_user"));
       const requesterId = auth?._id;
 
       await api.delete(`/api/users/${userId}?userId=${encodeURIComponent(requesterId)}`);
 
-      // if the logged-in user deleted themselves → clear session
       if (String(userId) === String(requesterId)) {
         clearAuth();
         navigate("/");

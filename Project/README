@@ -1,2 +1,2 @@
-Build: docker build -t project-app .
-Run: docker run -p 1337:1337 --name project-container --env-file backend/.env project-app
+Build: docker build -t imy220-project .
+Run: docker run -p 1337:1337 imy220-project

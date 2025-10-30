@@ -18,7 +18,6 @@ const UserSchema = new mongoose.Schema(
       outgoing: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     },
 
-    // 🆕 Admin privilege flag
     isAdmin: { type: Boolean, default: false },
   },
   { timestamps: true }
